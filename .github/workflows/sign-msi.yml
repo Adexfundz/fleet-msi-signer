@@ -22,9 +22,14 @@ jobs:
           $bytes = [Convert]::FromBase64String("${{ secrets.CERT_BASE64 }}")
           [IO.File]::WriteAllBytes("cert.pfx", $bytes)
 
+      - name: Locate signtool
+        run: |
+          $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Select-Object -First 1
+          echo "SIGNTOOL=$($tool.FullName)" >> $env:GITHUB_ENV
+
       - name: Sign MSI
         run: |
-          signtool sign `
+          & "$env:SIGNTOOL" sign `
             /f cert.pfx `
             /p "${{ secrets.CERT_PASSWORD }}" `
             /fd SHA256 `
