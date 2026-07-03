@@ -1,9 +1,12 @@
-  GNU nano 6.2                                                                                    .github/workflows/sign-msi.yml
 name: Sign MSI
 
 on:
-  repository_dispatch:
-    types: [sign-msi]
+  workflow_dispatch:
+    inputs:
+      msi_url:
+        description: "MSI download URL"
+        required: true
+        type: string
 
 jobs:
   sign:
@@ -12,7 +15,7 @@ jobs:
     steps:
       - name: Download MSI
         run: |
-          Invoke-WebRequest -Uri "${{ github.event.client_payload.msi_url }}" -OutFile unsigned.msi
+          Invoke-WebRequest -Uri "${{ inputs.msi_url }}" -OutFile unsigned.msi
 
       - name: Restore Certificate
         run: |
@@ -34,4 +37,3 @@ jobs:
         with:
           name: signed-msi
           path: unsigned.msi
-
