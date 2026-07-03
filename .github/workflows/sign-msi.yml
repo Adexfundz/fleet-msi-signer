@@ -22,9 +22,16 @@ jobs:
           $bytes = [Convert]::FromBase64String("${{ secrets.CERT_BASE64 }}")
           [IO.File]::WriteAllBytes("cert.pfx", $bytes)
 
-      - name: Locate signtool
+      - name: Locate signtool (x64 only)
         run: |
-          $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Select-Object -First 1
+          $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -match "x64\\signtool.exe$" } |
+            Select-Object -First 1
+
+          if (-not $tool) {
+            throw "signtool x64 not found"
+          }
+
           echo "SIGNTOOL=$($tool.FullName)" >> $env:GITHUB_ENV
 
       - name: Sign MSI
