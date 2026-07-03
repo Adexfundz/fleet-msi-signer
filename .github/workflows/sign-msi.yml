@@ -1,0 +1,37 @@
+  GNU nano 6.2                                                                                    .github/workflows/sign-msi.yml
+name: Sign MSI
+
+on:
+  repository_dispatch:
+    types: [sign-msi]
+
+jobs:
+  sign:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download MSI
+        run: |
+          Invoke-WebRequest -Uri "${{ github.event.client_payload.msi_url }}" -OutFile unsigned.msi
+
+      - name: Restore Certificate
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.CERT_BASE64 }}")
+          [IO.File]::WriteAllBytes("cert.pfx", $bytes)
+
+      - name: Sign MSI
+        run: |
+          signtool sign `
+            /f cert.pfx `
+            /p "${{ secrets.CERT_PASSWORD }}" `
+            /fd SHA256 `
+            /tr http://timestamp.digicert.com `
+            /td SHA256 `
+            unsigned.msi
+
+      - name: Upload Signed MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-msi
+          path: unsigned.msi
+
